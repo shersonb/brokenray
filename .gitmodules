@@ -1,3 +1,6 @@
 [submodule "python-rpncalc"]
 	path = python-rpncalc
 	url = https://github.com/shersonb/python-rpncalc
+[submodule "python-parallel"]
+	path = python-parallel
+	url = https://github.com/shersonb/python-parallel
