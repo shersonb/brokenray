@@ -266,7 +266,7 @@ class PolarBrokenRayInversion(parallel.BaseTaskClass):
 
         An[mask] = 2 * self.W[mask] ** n * self.Factor[mask] * Sum[mask]
 
-        # Now to do the diagonal. This code will be simplified in the future
+        # Now to do the diagonal.
         # Since $r=s$ here, we have $q=1$, $u=\phi$, $v=-\tan\phi$,
         # and $w=1$.
 
