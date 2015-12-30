@@ -1,0 +1,3 @@
+[submodule "python-rpncalc"]
+	path = python-rpncalc
+	url = https://github.com/shersonb/python-rpncalc
