@@ -13,6 +13,10 @@ Ray transform. The resulting *.rpn.bz2 files are provided in this package. The o
 worksheets are data generators, used to simulate data for use as input to the inversions of
 both the Florescu, et. al. and Polar BRTs.
 
+The file 'polar-to-cartesian.py' is also provided as a standalone script used to perform
+filtering and resampling the data resulting from the Polar BRT from a polar grid to a
+Cartesian grid.
+
 1. Lucia Florescu, Vadim A. Markel, and John C. Schotland, Inversion formulas for the broken-
 ray Radon transform, Inverse Problems 27, 025002 (2011) (2010).
 2. Brian Sherson, Some Results in Single-Scattering Tomography, Ph.D. thesis, Oregon State
