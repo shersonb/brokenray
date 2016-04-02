@@ -18,6 +18,8 @@ parser.add_argument("--out", "-o", dest="output", action="store",
                     help="Output file. Default: <stdout>", default="-")
 parser.add_argument("--alpha", "-a", dest="alpha", action="store",
                     help=u"Reconstruction parameter 'alpha'. Higher values of alpha help cancel out error at the cost of blurring the reconstruction. Default: 3⋅√(∆x⋅∆y), or about 6 pixels wide.", default=None)
+parser.add_argument("--florescu-version", "-f", dest="f", action="store",
+                    help=u"Florescu, Markel, and Schotland inversion filter version.", default=1)
 parser.add_argument("--nmax", "-N", dest="nmax", action="store",
                     help=u"Reconstruction parameter 'nmax' for the Polar Broken Ray transform. Reconstruct Fourier coefficients up to 'nmax'.", default=None)
 parser.add_argument("--threads", "-T", dest="threads", action="store",
@@ -146,6 +148,13 @@ if brt_type == "FBRT":
             print >>sys.stderr, "Bad parameter for alpha. Expected floating point or integer, got '%s' instead." % args.alpha
             sys.exit()
 
+    if args.f in ("1", "2", 1):
+        args.f = int(args.f)
+    else:
+        print >>sys.stderr, "Unknown inversion filter for the Florescu, Markel and Schotland BRT, got '%s' instead." % args.f
+        sys.exit()
+
+
     brt_inv = FMSBrokenRayInversion(H, W, xmin, xmax, ymin, ymax, theta)
 
     print >>msgout, u"Performing inversion with α = %.5f." % args.alpha
@@ -153,7 +162,7 @@ if brt_type == "FBRT":
     print >>msgout, "Generating Kernel...",
     msgout.flush()
     t0 = time.time()
-    kernel = brt_inv.make_kernel(args.alpha)
+    kernel = brt_inv.make_kernel(args.alpha, version=args.f)
     print >>msgout, "%.2f seconds" % (time.time() - t0)
 
     print >>msgout, "Performing inversion...",

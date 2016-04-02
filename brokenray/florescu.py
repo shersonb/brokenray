@@ -25,16 +25,32 @@ class FMSBrokenRayInversion(object):
     Scattering angles of $\theta>\frac{\pi}{2}$ are not
     supported."""
 
-    # Initialize 'kernel_generator'. Currently a placeholder
+    # Initialize 'kernel_generator_v1'. Currently a placeholder
     # that does not actually hold the RPN code needed.
     # Will load RPN from an external file as it is needed.
 
     dirname, fname = os.path.split(__file__)
+
     src = "fmsbrt-inv-kernel-placeholder.rpn.bz2"
     f = bz2.BZ2File(os.path.join(dirname, src), "r")
     rpn = f.read().decode("utf8")
-    kernel_generator = rpncalc.decode(rpn)
+    kernel_generator_v1 = rpncalc.decode(rpn)
     f.close()
+
+    # Load both parts of 'kernel_generator_v2'.
+
+    src = "fmsbrt-inv-kernel-v2-part1.rpn.bz2"
+    f = bz2.BZ2File(os.path.join(dirname, src), "r")
+    rpn = f.read().decode("utf8")
+    kernel_generator_v2_part1 = rpncalc.decode(rpn)
+    f.close()
+
+    src = "fmsbrt-inv-kernel-v2-part2.rpn.bz2"
+    f = bz2.BZ2File(os.path.join(dirname, src), "r")
+    rpn = f.read().decode("utf8")
+    kernel_generator_v2_part2 = rpncalc.decode(rpn)
+    f.close()
+
     del dirname, fname, src, f, rpn
 
     def __init__(self, H, W, xmin, xmax, ymin, ymax, theta):
@@ -212,7 +228,7 @@ class FMSBrokenRayInversion(object):
 
         return data_ext
 
-    def make_kernel(self, alpha):
+    def make_kernel(self, alpha, version=1):
         """Prepares a convolution kernel for use to perform numerical
         inversion of the Florescu, et. al. Broken Ray transform."""
 
@@ -271,28 +287,41 @@ class FMSBrokenRayInversion(object):
 
         # Prepare $pq$ grid.
 
-        P = B * X - A * Y
-        Q = A * X + B * Y
-
         alpha = float128(alpha)
 
-        case_num = self.kernel_generator.findcase(a=A, b=B)
-        case, formula = self.kernel_generator[case_num]
+        if version == 1:
+            P = B * X - A * Y
+            Q = A * X + B * Y
 
-        if len(formula) == 0:
-            dirname, fname = os.path.split(__file__)
-            src = "fmsbrt-inv-kernel-%d.rpn.bz2" % (case_num + 1)
+            case_num = self.kernel_generator_v1.findcase(a=A, b=B)
+            case, formula = self.kernel_generator_v1[case_num]
 
-            f = bz2.BZ2File(os.path.join(dirname, src), "r")
-            rpn = f.read().decode("utf8")
-            f.close()
+            if len(formula) == 0:
+                dirname, fname = os.path.split(__file__)
+                src = "fmsbrt-inv-kernel-%d.rpn.bz2" % (case_num + 1)
 
-            self.kernel_generator[case_num] = (case,
+                f = bz2.BZ2File(os.path.join(dirname, src), "r")
+                rpn = f.read().decode("utf8")
+                f.close()
+
+                self.kernel_generator_v1[case_num] = (case,
                                                rpncalc.decode(rpn))
 
-        Phi = alpha * self.kernel_generator(a=A, b=B,
+            Phi = alpha * self.kernel_generator_v1(a=A, b=B,
                                             x=X / alpha, y=Y / alpha,
                                             p=P / alpha, q=Q / alpha)
+        elif version == 2:
+            W1 = cos(theta/2)
+            W2 = sin(theta/2)
+            P = -W2*X+W1*Y
+            Q = W1*X+W2*Y
+
+            F = self.kernel_generator_v2_part1
+            G = self.kernel_generator_v2_part2
+
+            Phi = W1**2/W2*F(x=X/alpha, y=Y/alpha, p=P/alpha,
+                            q=Q/alpha, w1=W1, w2=W2)*alpha/4 - \
+                          G(x=X/alpha, y=Y/alpha, w1=W1, w2=W2)*alpha*W2/2
 
         Ker = (Phi[2:] + Phi[:-2] - 2 * Phi[1:-1]) / dx
         Ker = (Ker[:, 2:] + Ker[:, :-2] - 2 * Ker[:, 1:-1]) / dy
